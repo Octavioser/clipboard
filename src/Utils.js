@@ -1,3 +1,7 @@
+/* global chrome */
+
+import React from "react";
+import { renderToStaticMarkup } from 'react-dom/server';
 
 
 // 클립보드 데이터 파싱
@@ -40,8 +44,8 @@ export const parsingClipboard = async () => {
 
 
 // html, text 클립보드에 저장
-export const parsingDataSetClipboard = async (blobText, blobtype) => {
-    const type = blobtype;
+export const parsingDataSetClipboard = async (blobText) => {
+    const type = 'text/html';
     const blob = new Blob([blobText], { type });
     const data = [new ClipboardItem({ [type]: blob })];
     await navigator.clipboard.write(data);
@@ -119,11 +123,9 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
 
             console.log(htmlStringRemoveMeta)
 
-            parseHtmlString(htmlStringRemoveMeta)
-
             // 3. DOMParser로 문자열을 문서 객체로 파싱
             const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlString, "text/html");
+            const doc = parser.parseFromString(htmlStringRemoveMeta, "text/html");
             if (
                 isRequiredInvalid(doc.getElementsByClassName("slide_object")) ||
                 isRequiredInvalid(doc.getElementsByClassName("dze_shape_main")) ||
@@ -143,7 +145,7 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
             svg.removeAttribute("width");
             svg.removeAttribute("height");
 
-            return { type: '1', value: svg.outerHTML }
+            return { displayValue: svg.outerHTML, value: htmlStringRemoveMeta }
         }
     } catch (error) {
         console.log(error.message);
@@ -152,14 +154,21 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
 
 // 스트링 html 파서 
 export const parseHtmlString = (elStr) => {
+    console.log(elStr)
 
     const elements = [];
 
     const elStringList = elStr.split(/(?=<)/);
-    console.log(elStringList)
 
     let depth = 0;
-
+    // 2차 배열로 변환해서 해당 트리구조 바꿔주기 
+    //   r --------------- ㄱ
+    //   | 순번 | 데이터 | ...|
+    //   |  0  | {..} | ...|
+    //   |  4  | {..} | ...|  
+    //   |  6  | {..} | ...|
+    //   ㄴ ----------------J
+    //  이와 같은 배열이 만들어지고  해당순번은 child 데이터를 분석하는 시점의 순번이다.
     for (let i = 0; i < elStringList.length; i++) {
         //  계산 시점에 가르키는 sq
         // 위치:#1 에서 else인경우에만 sq값은 없으므로 0 처리
@@ -177,21 +186,46 @@ export const parseHtmlString = (elStr) => {
             continue;
         }
 
-        // 부모 sq 
-        const parents = depth > 0 ? elements[depth - 1][0] : null;
+        // 1) 동적으로 태그 이름을 넣어 정규식 생성
+        const regex = new RegExp(`<${tagNm}\\s+([^>]+)>`, 'i');
+        // 2) 실제 문자열에서 여는 태그와 속성 문자열 추출
+        const openTagMatch = str.match(regex);
 
-        // 부모값 업데이트 
-        if (depth > 0) {
-            elements[depth - 1][parents].hasChild = true;
-        }
+        const attrString = openTagMatch ? openTagMatch[1] : '';
+
+        //  class id 삭제 스타일속성 widht와 height삭제,
+        const attrs = (() => {
+
+            const attr = (() => {
+                const data = parseAttributes(attrString);
+                if (data.style) {
+                    const entries = Object.entries(parseStyleString(data.style));
+                    // const filterEntries = entries.filter(([key, value]) => !(['width', 'height'].includes(key)));
+                    data.style = Object.fromEntries(entries);
+                }
+                // svg 가운데 중앙정렬 속성 넣어주기 
+                if (tagNm === 'svg') data.preserveAspectRatio = "xMidYMid meet"
+                return data
+            })()
+            console.log(attr)
+
+            const entries = Object.entries(attr);
+            const filterEntries = entries.filter(([key, value]) => tagNm === 'marker' || !(['id', 'class'].includes(key)));
+            return Object.fromEntries(filterEntries);
+        })() || {};
+
+        console.log(attrs)
+
+        // 부모 sq 
+        const parents = depth > 0 ? elements[depth - 1][0] : null
 
         // 해당 리스트가 존재하면 위치:#1
         if (elements[depth] instanceof Array) {
-            elements[depth][sq] = { tagNm, hasChild: false, parents }
+            elements[depth][sq] = { tagNm, parents, attrs }
         }
         else {
             // index 0은 계산 시점에 가르키는 sq
-            elements[depth] = [1, { tagNm, hasChild: false, parents }]
+            elements[depth] = [1, { tagNm, parents, attrs }]
         }
 
         if (tagNm === 'br' || str.endsWith('/>')) {
@@ -200,10 +234,110 @@ export const parseHtmlString = (elStr) => {
         }
 
         depth++;
-
-        console.log(elements)
     }
 
+    // createElement 해주기 
+
     console.log(elements)
+
+    // 인덱스별로 child정보를 저장용
+    let childList = []
+    for (let i = elements.length - 1; i >= 0; i--) {
+        let targetList = elements[i]
+        childList[i] = [];
+        for (let j = 0; j < targetList.length; j++) {
+
+            const target = targetList[j];
+
+            if (target.parents) {
+
+                const targetChild = (() => {
+                    if (i === elements.length - 1) return null;
+                    // 여기서 j는 child에서 parents에 넣어놓은 인덱스 
+                    return childList[i + 1][j]
+                })()
+
+                if (childList[i][target.parents] instanceof Array) {
+                    childList[i][target.parents].push(React.createElement(target.tagNm, { ...target.attrs }, targetChild))
+                }
+                else {
+                    childList[i][target.parents] = [React.createElement(target.tagNm, { ...target.attrs }, targetChild)]
+                }
+            }
+        }
+    }
+
+    console.log(childList)
+    console.log(elements)
+    console.log(renderToStaticMarkup(React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])))
+    return React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])
+}
+
+// 태그 속성파서 
+const parseAttributes = (attrString) => {
+    const result = {}
+    const attrRegex = /([^\s=]+)\s*=\s*"([^"]*)"/g;
+    let m2;
+    while ((m2 = attrRegex.exec(attrString))) {
+        const [, name, value] = m2;
+        result[name] = value;
+    }
+    return result
+}
+
+// 태그의 속성에 style 파서
+const parseStyleString = styleString => {
+    return styleString
+        .replace(/&quot;/g, '"')
+        .split(';')                       // ["width: 116.667px", " height: 113.333px", ""]
+        .map(s => s.trim())               // ["width: 116.667px", "height: 113.333px", ""]
+        .filter(e => e)                  // 마지막 빈 문자열 제거
+        .reduce((obj, rule) => {
+            const [prop, val] = rule.split(':').map(s => s.trim());
+            // kebab-case → camelCase
+            const jsProp = prop.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
+            // 숫자(px 단위)면 숫자로 변환, 아니면 원래 문자열
+            const numMatch = /^(\d+(\.\d+)?)(px)?$/.exec(val);
+            obj[jsProp] = numMatch
+                ? parseFloat(numMatch[1])
+                : val;
+
+            return obj;
+        }, {});
+}
+
+
+// 도형의 키를 시간으로 저장 
+export const getCurrentDateTimeNumberString = () => {
+    const d = new Date();
+    // padStart(2, '0')로 항상 2자리 보장
+    const yyyy = d.getFullYear();
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${yyyy}${MM}${dd}${hh}${mm}${ss}`;
+}
+
+
+export const searchItem = async () => {
+    const { item } = await chrome.storage.local.get(['item']);
+    return item || [];
+}
+
+export const saveItem = async (newItem) => {
+    const { item } = await chrome.storage.local.get(['item']);
+
+    const newData = [...(item || []), newItem];
+    await chrome.storage.local.set({ item: newData });
+}
+
+export const deleteItem = async (key) => {
+    const { item } = await chrome.storage.local.get(['item']);
+
+    const newData = (item || []).filter(item => item.key !== key);
+    await chrome.storage.local.set({ item: newData });
 }
 

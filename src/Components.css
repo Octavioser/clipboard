@@ -1,0 +1,109 @@
+.snackbar-container {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.snackbar {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    pointer-events: auto;
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.snackbar-warning {
+    border-left: 4px solid #f5700b;
+}
+
+.snackbar-content {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    gap: 12px;
+}
+
+.snackbar-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.snackbar-warning .snackbar-icon {
+    color: #f59e0b;
+}
+
+.snackbar-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.snackbar-close:hover {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.snackbar-message {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.snackbar-progress {
+    height: 3px;
+    background-color: #f3f4f6;
+    overflow: hidden;
+}
+
+.snackbar-progress-bar {
+    height: 100%;
+    background-color: currentColor;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+@keyframes progress {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+.snackbar-warning .snackbar-progress-bar {
+    background-color: #f59e0b;
+}
+
+@media (max-width: 768px) {
+    .snackbar {
+        left: 16px;
+        right: 16px;
+    }
+
+    .snackbar-container {
+        left: 16px;
+        right: 16px;
+    }
+}

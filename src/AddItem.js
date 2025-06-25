@@ -1,39 +1,21 @@
 import React, { useRef, useState, Fragment } from 'react';
-import { validateParsingClipboardToText } from './Utils';
+import { validateParsingClipboardToText, getCurrentDateTimeNumberString, parseHtmlString, saveItem, searchItem } from './Utils';
 import { CommonSnackbar } from './Components';
-import type1 from './img/type1.png'
-import type2 from './img/type2.png'
-import type3 from './img/type3.png'
-import type4 from './img/type4.png'
-import type5 from './img/type5.png'
-import type7 from './img/type7.png'
-import type8 from './img/type8.png'
-import type9 from './img/type9.png'
-import type10 from './img/type10.png'
-import type12 from './img/type12.png'
-import type13 from './img/type13.png'
-import type14 from './img/type14.png'
-import type15 from './img/type15.png'
-import type16 from './img/type16.png'
-import type161 from './img/type161.png'
-import type162 from './img/type162.png'
-import type17 from './img/type17.png'
-import type172 from './img/type172.png'
-import type18 from './img/type18.png'
-import type181 from './img/type181.png'
-import type182 from './img/type182.png'
-import './App.css'
+
+import './AddItem.css'
 
 
 
 
-const AddItem = ({ isAdd }) => {
+const AddItem = ({ isAdd, close }) => {
 
     const [currentPage, setCurrentPage] = useState(1)
 
     const [titleInput, setTitleInput] = useState("")
 
-    const [addItem, setAddItem] = useState({ type: '', value: '' })
+    const [addItem, setAddItem] = useState({ value: '', displayValue: '' })
+
+    const [displayItem, setDisplayItem] = useState(<></>)
 
     const [snackbar, setSnackbar] = useState({ show: false, message: '' })
 
@@ -75,12 +57,13 @@ const AddItem = ({ isAdd }) => {
                                 <p className="paste-instruction">복사 후 밑에 버튼을 클릭 해주세요.</p>
                                 <button className="paste-button"
                                     onClick={async () => {
-                                        await validateParsingClipboardToText((e) => { setSnackbar(e) })
-                                        // const { type, value } = await validateParsingClipboardToText((e) => { setSnackbar(e) })
-                                        // if (type && value) {
-                                        //     setAddItem({ type, value })
-                                        //     setCurrentPage(2)
-                                        // }
+                                        // await validateParsingClipboardToText((e) => { setSnackbar(e) })
+                                        const { displayValue, value } = await validateParsingClipboardToText((e) => { setSnackbar(e) })
+                                        if (value) {
+                                            setAddItem({ displayValue, value })
+                                            setDisplayItem(parseHtmlString(displayValue))
+                                            setCurrentPage(2)
+                                        }
                                     }}
                                 >
                                     클립보드에서 도형 추출하기
@@ -94,7 +77,6 @@ const AddItem = ({ isAdd }) => {
                                 onClick={() => {
                                     setCurrentPage(1)
                                     setTitleInput('')
-
                                 }} >
                                 <svg
                                     width="20"
@@ -111,24 +93,10 @@ const AddItem = ({ isAdd }) => {
 
                             <div className="title-input-area">
                                 <div className="input-icon">
-                                    <iframe
-                                        srcDoc={addItem.value} // 클립보드에서 가져온 htmlString
-                                        style={{
-                                            width: '100px',
-                                            height: '100px',
-                                            border: 'none',
-                                            background: 'transparent',
-                                            borderRadius: 20,
-                                            display: 'block',
-                                        }}
-                                        sandbox=""
-                                        title="Clipboard Preview"
-                                    />
+                                    {displayItem}
                                 </div>
-                                <p>% 실제 복사한 도형에 따라 </p>
                                 <h2 className="input-title">제목을 입력해주세요</h2>
                                 <div className="input-group">
-                                    <label htmlFor="title-input" className="input-label">제목</label>
                                     <input
                                         id="title-input"
                                         type="text"
@@ -142,11 +110,24 @@ const AddItem = ({ isAdd }) => {
 
                                 <div className="button-group">
                                     <button
-                                        onClick={() => {
-
-                                        }}
                                         disabled={!titleInput.trim()}
                                         className="save-button"
+                                        onClick={async () => {
+                                            if (!titleInput) {
+                                                setSnackbar({ show: true, message: '제목을 입력해주세요.' })
+                                            }
+                                            const key = getCurrentDateTimeNumberString();
+                                            await saveItem({ key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput })
+                                            setSnackbar({ show: true, message: '저장되었습니다.' })
+                                            setTimeout(() => {
+                                                setCurrentPage(1)
+                                                setTitleInput("")
+                                                setAddItem({ value: '', displayValue: '' })
+                                                setDisplayItem(<></>)
+                                                setSnackbar({ show: false, message: '' })
+                                                close();
+                                            }, 1000)
+                                        }}
                                     >
                                         저장하기
                                     </button>
