@@ -1,5 +1,5 @@
 import React, { useRef, useState, Fragment } from 'react';
-import { validateParsingClipboardToText, getCurrentDateTimeNumberString, parseHtmlString, saveItem, searchItem } from './Utils';
+import { validateParsingClipboardToText, getCurrentDateTimeNumberString, parseHtmlString, saveItem } from './Utils';
 import { CommonSnackbar } from './Components';
 
 import './AddItem.css'
@@ -7,13 +7,13 @@ import './AddItem.css'
 
 
 
-const AddItem = ({ isAdd, close }) => {
+const AddItem = ({ isAdd, close, setIsWord }) => {
 
     const [currentPage, setCurrentPage] = useState(1)
 
     const [titleInput, setTitleInput] = useState("")
 
-    const [addItem, setAddItem] = useState({ value: '', displayValue: '' })
+    const [addItem, setAddItem] = useState({ value: '', displayValue: '', isWord: null })
 
     const [displayItem, setDisplayItem] = useState(<></>)
 
@@ -57,10 +57,9 @@ const AddItem = ({ isAdd, close }) => {
                                 <p className="paste-instruction">복사 후 밑에 버튼을 클릭 해주세요.</p>
                                 <button className="paste-button"
                                     onClick={async () => {
-                                        // await validateParsingClipboardToText((e) => { setSnackbar(e) })
-                                        const { displayValue, value } = await validateParsingClipboardToText((e) => { setSnackbar(e) })
+                                        const { displayValue, value, isWord } = await validateParsingClipboardToText((e) => { setSnackbar(e) })
                                         if (value) {
-                                            setAddItem({ displayValue, value })
+                                            setAddItem({ displayValue, value, isWord })
                                             setDisplayItem(parseHtmlString(displayValue))
                                             setCurrentPage(2)
                                         }
@@ -92,7 +91,7 @@ const AddItem = ({ isAdd, close }) => {
                             </button>
 
                             <div className="title-input-area">
-                                <div className="input-icon">
+                                <div className="input-icon2">
                                     {displayItem}
                                 </div>
                                 <h2 className="input-title">제목을 입력해주세요</h2>
@@ -108,7 +107,7 @@ const AddItem = ({ isAdd, close }) => {
                                     />
                                 </div>
 
-                                <div className="button-group">
+                                <div className="button-group2">
                                     <button
                                         disabled={!titleInput.trim()}
                                         className="save-button"
@@ -117,12 +116,13 @@ const AddItem = ({ isAdd, close }) => {
                                                 setSnackbar({ show: true, message: '제목을 입력해주세요.' })
                                             }
                                             const key = getCurrentDateTimeNumberString();
-                                            await saveItem({ key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput })
+                                            await saveItem(addItem.isWord, { key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput })
+                                            setIsWord(addItem.isWord);
                                             setSnackbar({ show: true, message: '저장되었습니다.' })
                                             setTimeout(() => {
                                                 setCurrentPage(1)
                                                 setTitleInput("")
-                                                setAddItem({ value: '', displayValue: '' })
+                                                setAddItem({ value: '', displayValue: '', isWord: null })
                                                 setDisplayItem(<></>)
                                                 setSnackbar({ show: false, message: '' })
                                                 close();

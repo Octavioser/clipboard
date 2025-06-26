@@ -1,7 +1,6 @@
 /* global chrome */
 
 import React from "react";
-import { renderToStaticMarkup } from 'react-dom/server';
 
 
 // 클립보드 데이터 파싱
@@ -61,11 +60,8 @@ export const parsingImgSetClipboard = async (img) => {
 
 // 검증후 통과되면 클립보드 저장 후 리턴
 export const validateParsingClipboardToText = async (showSnackbar) => {
-
-
     // 있어야할 class
     const isRequiredInvalid = el => {
-        console.log(el)
         if (!el || el.length === 0) {
             showSnackbar({ show: true, message: '상단 삽입탭 - 도형 만 가능합니다.' })
             return true;
@@ -117,26 +113,66 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
             // 2. Blob을 텍스트(HTML 문자열)로 변환
             const htmlString = await blob.text();
 
+            // <meta charset="utf-8"> 제거
+            // br 모두 <br>로 바꾸기
             const htmlStringRemoveMeta = htmlString
                 .replace(/<meta\s+charset=["'][^"']+["']\s*\/?>/gi, "")
                 .replace(/<br\b[^>]*>(?:<\/br>)?/gi, '<br>');
 
-            console.log(htmlStringRemoveMeta)
-
             // 3. DOMParser로 문자열을 문서 객체로 파싱
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlStringRemoveMeta, "text/html");
-            if (
-                isRequiredInvalid(doc.getElementsByClassName("slide_object")) ||
-                isRequiredInvalid(doc.getElementsByClassName("dze_shape_main")) ||
-                isRequiredInvalid(doc.getElementsByClassName("dze_shape_svg")) ||
 
-                isNotAllowedPresent(doc.getElementsByClassName("dze_shape_placeholder")) ||
-                isNotAllowedPresent(doc.getElementsByClassName("dze_table")) ||
-                isNotAllowedPresent(doc.getElementsByClassName("text_holder")) ||
-                isNotAllowedPresent(doc.getElementsByClassName("object_holder")) ||
-                isNotAllowedPresent(doc.getElementsByClassName("highcharts-container "))
+            // 있으면 안되는 태그 (xss 취약점 포함)
+            if (["script", "iframe", "object", "embed", "form", "video", "audio", "img", "table", "colgroup", "tbody"]
+                .some(tag => {
+                    const tagel = doc.getElementsByTagName(tag);
+                    return tagel && tagel.length > 0
+                })
             ) {
+                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' })
+                return false;
+            }
+
+
+            // 슬라이드 워드 구분값 
+            let isWord = null;
+            // 슬라이드 검증 로직
+            const slideObject = doc.getElementsByClassName("slide_object");
+            const dzeAnchor = doc.getElementsByClassName("dze_anchor");
+
+            if (slideObject && slideObject.length > 0) {
+                isWord = false;
+                if (
+                    isRequiredInvalid(slideObject) ||
+                    isRequiredInvalid(doc.getElementsByClassName("dze_shape_main")) ||
+                    isRequiredInvalid(doc.getElementsByClassName("dze_shape_svg")) ||
+
+                    isNotAllowedPresent(doc.getElementsByClassName("dze_shape_placeholder")) ||
+                    isNotAllowedPresent(doc.getElementsByClassName("dze_table")) ||
+                    isNotAllowedPresent(doc.getElementsByClassName("text_holder")) ||
+                    isNotAllowedPresent(doc.getElementsByClassName("object_holder")) ||
+                    isNotAllowedPresent(doc.getElementsByClassName("highcharts-container "))
+                ) {
+                    return false;
+                }
+            }
+
+            // 워드 검증로직 
+            else if (dzeAnchor && dzeAnchor.length > 0) {
+                isWord = true;
+                if (
+                    isRequiredInvalid(dzeAnchor) ||
+                    isRequiredInvalid(doc.getElementsByClassName("dze_shape_main")) ||
+                    isRequiredInvalid(doc.querySelectorAll('[id^="dze_shape_svg"]')) ||
+
+                    isNotAllowedPresent(doc.getElementsByTagName('div'))
+                ) {
+                    return false;
+                }
+            }
+            else {
+                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' })
                 return false;
             }
 
@@ -145,132 +181,137 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
             svg.removeAttribute("width");
             svg.removeAttribute("height");
 
-            return { displayValue: svg.outerHTML, value: htmlStringRemoveMeta }
+            console.log(isWord)
+
+            return { displayValue: svg.outerHTML, value: htmlStringRemoveMeta, isWord }
         }
     } catch (error) {
-        console.log(error.message);
+        console.log(error.message)
+        return { displayValue: '', value: null }
     }
 };
 
 // 스트링 html 파서 
 export const parseHtmlString = (elStr) => {
-    console.log(elStr)
+    if (!elStr) return <></>
+    try {
+        const elements = [];
 
-    const elements = [];
+        const elStringList = elStr.split(/(?=<)/);
 
-    const elStringList = elStr.split(/(?=<)/);
+        let depth = 0;
+        // 2차 배열로 변환해서 해당 트리구조 바꿔주기 
+        //   r --------------- ㄱ
+        //   | 순번 | 데이터 | ...|
+        //   |  0  | {..} | ...|
+        //   |  4  | {..} | ...|  
+        //   |  6  | {..} | ...|
+        //   ㄴ ----------------J
+        //  이와 같은 배열이 만들어지고  해당순번은 child 데이터를 분석하는 시점의 순번이다.
+        for (let i = 0; i < elStringList.length; i++) {
+            //  계산 시점에 가르키는 sq
+            // 위치:#1 에서 else인경우에만 sq값은 없으므로 0 처리
+            const sq = elements?.[depth]?.[0] || 0;
+            // 
+            const str = elStringList[i];
 
-    let depth = 0;
-    // 2차 배열로 변환해서 해당 트리구조 바꿔주기 
-    //   r --------------- ㄱ
-    //   | 순번 | 데이터 | ...|
-    //   |  0  | {..} | ...|
-    //   |  4  | {..} | ...|  
-    //   |  6  | {..} | ...|
-    //   ㄴ ----------------J
-    //  이와 같은 배열이 만들어지고  해당순번은 child 데이터를 분석하는 시점의 순번이다.
-    for (let i = 0; i < elStringList.length; i++) {
-        //  계산 시점에 가르키는 sq
-        // 위치:#1 에서 else인경우에만 sq값은 없으므로 0 처리
-        const sq = elements?.[depth]?.[0] || 0;
-        // 
-        const str = elStringList[i];
+            // tag네임 구하기 
+            const m = str.match(/^<\s*\/?\s*([^\s/>]+)/);
+            const tagNm = m[1];
 
-        // tag네임 구하기 
-        const m = str.match(/^<\s*\/?\s*([^\s/>]+)/);
-        const tagNm = m[1];
+            if (str.startsWith('</')) {
+                depth--;
+                elements[depth][0]++;
+                continue;
+            }
 
-        if (str.startsWith('</')) {
-            depth--;
-            elements[depth][0]++;
-            continue;
-        }
+            // 1) 동적으로 태그 이름을 넣어 정규식 생성
+            const regex = new RegExp(`<${tagNm}\\s+([^>]+)>`, 'i');
+            // 2) 실제 문자열에서 여는 태그와 속성 문자열 추출
+            const openTagMatch = str.match(regex);
 
-        // 1) 동적으로 태그 이름을 넣어 정규식 생성
-        const regex = new RegExp(`<${tagNm}\\s+([^>]+)>`, 'i');
-        // 2) 실제 문자열에서 여는 태그와 속성 문자열 추출
-        const openTagMatch = str.match(regex);
+            const attrString = openTagMatch ? openTagMatch[1] : '';
 
-        const attrString = openTagMatch ? openTagMatch[1] : '';
+            //  class id 삭제 스타일속성 widht와 height삭제,
+            const attrs = (() => {
 
-        //  class id 삭제 스타일속성 widht와 height삭제,
-        const attrs = (() => {
-
-            const attr = (() => {
-                const data = parseAttributes(attrString);
-                if (data.style) {
-                    const entries = Object.entries(parseStyleString(data.style));
-                    // const filterEntries = entries.filter(([key, value]) => !(['width', 'height'].includes(key)));
-                    data.style = Object.fromEntries(entries);
-                }
-                // svg 가운데 중앙정렬 속성 넣어주기 
-                if (tagNm === 'svg') data.preserveAspectRatio = "xMidYMid meet"
-                return data
-            })()
-            console.log(attr)
-
-            const entries = Object.entries(attr);
-            const filterEntries = entries.filter(([key, value]) => tagNm === 'marker' || !(['id', 'class'].includes(key)));
-            return Object.fromEntries(filterEntries);
-        })() || {};
-
-        console.log(attrs)
-
-        // 부모 sq 
-        const parents = depth > 0 ? elements[depth - 1][0] : null
-
-        // 해당 리스트가 존재하면 위치:#1
-        if (elements[depth] instanceof Array) {
-            elements[depth][sq] = { tagNm, parents, attrs }
-        }
-        else {
-            // index 0은 계산 시점에 가르키는 sq
-            elements[depth] = [1, { tagNm, parents, attrs }]
-        }
-
-        if (tagNm === 'br' || str.endsWith('/>')) {
-            elements[depth][0]++;
-            continue;
-        }
-
-        depth++;
-    }
-
-    // createElement 해주기 
-
-    console.log(elements)
-
-    // 인덱스별로 child정보를 저장용
-    let childList = []
-    for (let i = elements.length - 1; i >= 0; i--) {
-        let targetList = elements[i]
-        childList[i] = [];
-        for (let j = 0; j < targetList.length; j++) {
-
-            const target = targetList[j];
-
-            if (target.parents) {
-
-                const targetChild = (() => {
-                    if (i === elements.length - 1) return null;
-                    // 여기서 j는 child에서 parents에 넣어놓은 인덱스 
-                    return childList[i + 1][j]
+                const attr = (() => {
+                    const data = parseAttributes(attrString);
+                    if (data.style) {
+                        const entries = Object.entries(parseStyleString(data.style));
+                        const filterEntries = entries.map(([key, value]) => {
+                            if (key === 'position') return [key, 'static']
+                            // if (key === 'width') return [key, '150px']
+                            // if (key === 'height') return [key, '150px']
+                            return [key, value]
+                        });
+                        data.style = Object.fromEntries(filterEntries);
+                    }
+                    // svg 가운데 중앙정렬 속성 넣어주기 
+                    if (tagNm === 'svg') data.preserveAspectRatio = "xMidYMid meet"
+                    return data
                 })()
 
-                if (childList[i][target.parents] instanceof Array) {
-                    childList[i][target.parents].push(React.createElement(target.tagNm, { ...target.attrs }, targetChild))
-                }
-                else {
-                    childList[i][target.parents] = [React.createElement(target.tagNm, { ...target.attrs }, targetChild)]
+                const entries = Object.entries(attr);
+                const filterEntries = entries.filter(([key, value]) => tagNm === 'marker' || !(['id', 'class'].includes(key)));
+                return Object.fromEntries(filterEntries);
+            })() || {};
+
+            // 부모 sq 
+            const parents = depth > 0 ? elements[depth - 1][0] : null
+
+            // 해당 리스트가 존재하면 위치:#1
+            if (elements[depth] instanceof Array) {
+                elements[depth][sq] = { tagNm, parents, attrs }
+            }
+            else {
+                // index 0은 계산 시점에 가르키는 sq
+                elements[depth] = [1, { tagNm, parents, attrs }]
+            }
+
+            if (tagNm === 'br' || str.endsWith('/>')) {
+                elements[depth][0]++;
+                continue;
+            }
+
+            depth++;
+        }
+
+        // createElement 해주기 
+
+        // 인덱스별로 child정보를 저장용
+        let childList = []
+        for (let i = elements.length - 1; i >= 0; i--) {
+            let targetList = elements[i]
+            childList[i] = [];
+            for (let j = 0; j < targetList.length; j++) {
+
+                const target = targetList[j];
+
+                if (target.parents) {
+
+                    const targetChild = (() => {
+                        if (i === elements.length - 1) return null;
+                        // 여기서 j는 child에서 parents에 넣어놓은 인덱스 
+                        return childList[i + 1][j]
+                    })()
+
+                    if (childList[i][target.parents] instanceof Array) {
+                        childList[i][target.parents].push(React.createElement(target.tagNm, { ...target.attrs }, targetChild))
+                    }
+                    else {
+                        childList[i][target.parents] = [React.createElement(target.tagNm, { ...target.attrs }, targetChild)]
+                    }
                 }
             }
         }
+        return React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])
+    } catch (error) {
+        console.log(error)
+        return <></>
     }
 
-    console.log(childList)
-    console.log(elements)
-    console.log(renderToStaticMarkup(React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])))
-    return React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])
+
 }
 
 // 태그 속성파서 
@@ -322,22 +363,25 @@ export const getCurrentDateTimeNumberString = () => {
 }
 
 
-export const searchItem = async () => {
-    const { item } = await chrome.storage.local.get(['item']);
-    return item || [];
+export const searchItem = async (isWord) => {
+    const itemKey = isWord ? 'word' : 'slide';
+    const data = await chrome.storage.local.get([itemKey]);
+    return data[itemKey] || [];
 }
 
-export const saveItem = async (newItem) => {
-    const { item } = await chrome.storage.local.get(['item']);
+export const saveItem = async (isWord, newItem) => {
+    const itemKey = isWord ? 'word' : 'slide';
+    const data = await chrome.storage.local.get([itemKey]);
 
-    const newData = [...(item || []), newItem];
-    await chrome.storage.local.set({ item: newData });
+    const newData = [...(data[itemKey] || []), newItem];
+    await chrome.storage.local.set({ [itemKey]: newData });
 }
 
-export const deleteItem = async (key) => {
-    const { item } = await chrome.storage.local.get(['item']);
+export const deleteItem = async (isWord, key) => {
+    const itemKey = isWord ? 'word' : 'slide';
+    const data = await chrome.storage.local.get([itemKey]);
 
-    const newData = (item || []).filter(item => item.key !== key);
-    await chrome.storage.local.set({ item: newData });
+    const newData = (data[itemKey] || []).filter(item => item.key !== key);
+    await chrome.storage.local.set({ [itemKey]: newData });
 }
 

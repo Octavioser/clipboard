@@ -210,19 +210,18 @@
     justify-content: center;
 }
 
-.input-icon {
+.input-icon2 {
     display: flex;
     justify-content: center;
     /* 가로 중앙 */
     align-items: center;
     /* 세로 중앙 */
-
-    /* 2) (필요하다면) 부모 크기 지정 */
-    width: 150px;
-    height: 100px;
+    width: 100%;
+    height: 50%;
+    margin-bottom: 8px;
 }
 
-.input-icon>svg {
+.input-icon2>svg {
     display: flex;
     justify-content: center;
     /* 가로 중앙 */
@@ -273,7 +272,7 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.button-group {
+.button-group2 {
     display: flex;
     gap: 12px;
     width: 100%;
@@ -313,7 +312,7 @@
 
     .paste-area,
     .title-input-area {
-        padding: 30px 20px;
+        padding: 0px 20px;
     }
 
     .paste-title,

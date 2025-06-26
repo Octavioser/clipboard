@@ -42,3 +42,29 @@ export const CommonSnackbar = ({ snackbar = { show: false, message: '' }, close 
         </div>
     )
 }
+
+export const CommonDialog = ({ close, confirm, title, contentLabel, children }) =>
+
+    <div className="dialog-overlay" onClick={close}>
+        <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-header">
+                <h3>{title}</h3>
+                <button className="close-button" onClick={close}>
+                    ✕
+                </button>
+            </div>
+            <div className="dialog-content">
+                <p>{contentLabel}</p>
+                {children}
+            </div>
+            <div className="dialog-actions">
+                <button className="cancel-button" onClick={close}>
+                    취소
+                </button>
+                {confirm !== undefined &&
+                    <button className="confirm-button" onClick={confirm}>
+                        다운로드
+                    </button>}
+            </div>
+        </div>
+    </div>
