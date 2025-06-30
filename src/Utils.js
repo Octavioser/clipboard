@@ -181,8 +181,6 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
             svg.removeAttribute("width");
             svg.removeAttribute("height");
 
-            console.log(isWord)
-
             return { displayValue: svg.outerHTML, value: htmlStringRemoveMeta, isWord }
         }
     } catch (error) {
@@ -193,7 +191,7 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
 
 // 스트링 html 파서 
 export const parseHtmlString = (elStr) => {
-    if (!elStr) return <></>
+    if (!elStr) return null
     try {
         const elements = [];
 
@@ -308,7 +306,7 @@ export const parseHtmlString = (elStr) => {
         return React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])
     } catch (error) {
         console.log(error)
-        return <></>
+        return null
     }
 
 
@@ -372,6 +370,9 @@ export const searchItem = async (isWord) => {
 export const saveItem = async (isWord, newItem) => {
     const itemKey = isWord ? 'word' : 'slide';
     const data = await chrome.storage.local.get([itemKey]);
+
+    // 중복 방지용 
+    if ((data[itemKey] || []).some(({ key }) => key === newItem.key)) return;
 
     const newData = [...(data[itemKey] || []), newItem];
     await chrome.storage.local.set({ [itemKey]: newData });

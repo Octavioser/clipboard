@@ -5,7 +5,7 @@ import AddItem from './AddItem';
 
 import { CommonDialog, CommonSnackbar } from './Components';
 
-import { parsingClipboard, parsingDataSetClipboard, parsingImgSetClipboard, parseHtmlString, searchItem, deleteItem } from './Utils'
+import { parsingClipboard, parsingDataSetClipboard, parsingImgSetClipboard, parseHtmlString, searchItem, deleteItem, saveItem } from './Utils'
 
 import redCircle from './img/redCircle.png'
 import './App.css'
@@ -15,6 +15,8 @@ const App = () => {
     const [isWord, setIsWord] = useState(false)
 
     const [copyFlag, setCopyFlag] = useState('')
+
+    const [showDropdown, setShowDropdown] = useState(false)
 
     const [text, setText] = useState('');
 
@@ -31,13 +33,16 @@ const App = () => {
 
     const memoRef = useRef();
 
+    const testValue = '<div id="b116d5-40" class="slide_object" object_type="9" contenteditable="false" editable="1" style="left: 64px; top: 38px; z-index: 50022;"><div id="b116d5-40" class="dze_shape_main" shape_type="1" style="width: 116.667px; height: 113.333px;"><svg class="dze_shape_svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 116.667 113.333" style="width: 116.667px; height: 113.333px;"><defs></defs><g transform="translate(0, 0) scale(1, 1)"><g style="fill: rgb(255, 255, 255); fill-opacity: 1;"><path d="M 0 0 L 116.667 0 L 116.667 113.333 L 0 113.333 Z"></path></g><g style="fill: none; fill-opacity: 0; stroke: rgb(237, 125, 49); stroke-opacity: 1; stroke-width: 1; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; stroke-dasharray: none;"><path d="M 0 0 L 116.667 0 L 116.667 113.333 L 0 113.333 Z"></path></g><g style="fill: none; fill-opacity: 0; stroke: rgb(255, 255, 255); stroke-opacity: 0; stroke-width: 10; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; stroke-dasharray: none;"><path d="M 0 0 L 116.667 0 L 116.667 113.333 L 0 113.333 Z"></path></g></g></svg><div class="dze_shape_textbox" default_font_size="18pt" style="margin: 2px; width: 112.667px; height: 109.333px; left: 0px; top: 0px;"><div class="shape_textbox middle" contenteditable="false" style="color: rgb(0, 0, 0);"><p style="text-align: center;"><span style="font-size: 18pt;"><br></span></p></div></div></div></div>'
+    const testDisplayValue = '<svg class="dze_shape_svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 116.667 113.333" style="width: 116.667px; height: 113.333px;"><defs></defs><g transform="translate(0, 0) scale(1, 1)"><g style="fill: rgb(255, 255, 255); fill-opacity: 1;"><path d="M 0 0 L 116.667 0 L 116.667 113.333 L 0 113.333 Z"></path></g><g style="fill: none; fill-opacity: 0; stroke: rgb(237, 125, 49); stroke-opacity: 1; stroke-width: 1; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; stroke-dasharray: none;"><path d="M 0 0 L 116.667 0 L 116.667 113.333 L 0 113.333 Z"></path></g><g style="fill: none; fill-opacity: 0; stroke: rgb(255, 255, 255); stroke-opacity: 0; stroke-width: 10; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; stroke-dasharray: none;"><path d="M 0 0 L 116.667 0 L 116.667 113.333 L 0 113.333 Z"></path></g></g></svg>'
+
     const buttons = [
-        { key: 1, title: "홈", displayValue: null, value: '<></>' },
-        { key: 2, title: "사용자", displayValue: null, value: '<></>' },
-        { key: 3, title: "설정", displayValue: null, value: '<></>' },
-        { key: 4, title: "메일", displayValue: null, value: '<></>' },
-        { key: 5, title: "전화", displayValue: null, value: '<></>' },
-        { key: 6, title: "캘린더", displayValue: null, value: '<></>' },
+        { key: 1, title: "홈", displayValue: testDisplayValue, value: testValue },
+        { key: 2, title: "사용자", displayValue: testDisplayValue, value: testValue },
+        { key: 3, title: "설정", displayValue: testDisplayValue, value: testValue },
+        { key: 4, title: "메일", displayValue: testDisplayValue, value: testValue },
+        { key: 5, title: "전화", displayValue: testDisplayValue, value: testValue },
+        { key: 6, title: "캘린더", displayValue: testDisplayValue, value: testValue },
     ]
 
     useEffect(() => {
@@ -73,19 +78,50 @@ const App = () => {
             </div>
             <div className="guide-header">
                 <p className="guide-text">Click to copy an item</p>
-                <div className="button-group">
-                    <button className="icon-button" onClick={() => setShowDownloadDialog(true)} title="다운로드">
-                        💾
+                <div className="dropdown-container">
+                    <button className="dropdown-button" onClick={() => setShowDropdown(!showDropdown)}>
+                        {`메뉴  ${showDropdown ? '▲' : '▼'}`}
                     </button>
-                    <button className="icon-button" onClick={() => setShowUploadDialog(true)} title="업로드">
-                        📥
-                    </button>
-                    <button className="icon-button" onClick={() => { triggerRefresh() }} title="전환">
-                        🔄
-                    </button>
-                    <button className="icon-button" onClick={() => setDeleteMode(!deleteMode)}>
-                        {deleteMode ? '✔️' : '🗑️'}
-                    </button>
+                    {showDropdown && (
+                        <div className="dropdown-menu">
+                            <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                    setShowDownloadDialog(true)
+                                    setShowDropdown(false)
+                                }}
+                            >
+                                다운로드
+                            </button>
+                            <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                    setShowUploadDialog(true)
+                                    setShowDropdown(false)
+                                }}
+                            >
+                                업로드
+                            </button>
+                            <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                    setDeleteMode(!deleteMode)
+                                    setShowDropdown(false)
+                                }}
+                            >
+                                {deleteMode ? "제거 완료" : "제거"}
+                            </button>
+                            <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                    triggerRefresh()
+                                    setShowDropdown(false)
+                                }}
+                            >
+                                {`${isWord ? "슬라이드 모드" : "워드 모드"}`}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
             {/* <div>
@@ -139,33 +175,38 @@ const App = () => {
                             </div>
                         </div>
                     </div>
-                    {btnList.map(({ key, title, displayValue, value }) => (
-                        <div key={key} className="button-wrapper">
-                            <button
-                                onClick={async () => {
-                                    await parsingDataSetClipboard(value);
-                                    setCopyFlag(key)
-                                    setTimeout(() => { setCopyFlag('') }, 1000)
-                                }}
-                                className="square-button"
-                            >
-                                <div className="input-icon">
-                                    {parseHtmlString(displayValue)}
-                                </div>
-                                <span className="button-title">{copyFlag === key ? 'Copied!' : title}</span>
-                            </button>
-                            {deleteMode && (
+                    {btnList.map(({ key, title, displayValue, value }) => {
+                        const svgBtn = parseHtmlString(displayValue)
+                        if (!svgBtn) return null;
+                        return (
+                            <div key={key} className="button-wrapper">
                                 <button
-                                    className="delete-x-button"
                                     onClick={async () => {
-                                        await deleteItem(isWord, key);
-                                        setBtnList(await searchItem(isWord) || [])
-                                    }}>
-                                    ✕
+                                        if (deleteMode) return;
+                                        await parsingDataSetClipboard(value);
+                                        setCopyFlag(key)
+                                        setTimeout(() => { setCopyFlag('') }, 1000)
+                                    }}
+                                    className="square-button"
+                                >
+                                    <div className="input-icon">
+                                        {svgBtn}
+                                    </div>
+                                    <span className="button-title">{copyFlag === key ? 'Copied!' : title}</span>
                                 </button>
-                            )}
-                        </div>
-                    ))}
+                                {deleteMode && (
+                                    <button
+                                        className="delete-x-button"
+                                        onClick={async () => {
+                                            await deleteItem(isWord, key);
+                                            setBtnList(await searchItem(isWord) || [])
+                                        }}>
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        )
+                    }).filter(e => e)}
 
                 </div>
             </div>
@@ -224,9 +265,11 @@ const App = () => {
                         // 5. 메모리 해제
                         URL.revokeObjectURL(url);
 
+                        setShowDownloadDialog(false)
+
                     }}
                     title={'데이터 다운로드'}
-                    contentLabel={'클립보드 데이터를 파일로 다운로드합니다.'}
+                    contentLabel={'저장된 도형 데이터를 파일로 다운로드합니다.'}
                 >
                 </CommonDialog>
             }
@@ -234,14 +277,53 @@ const App = () => {
                 <CommonDialog
                     close={() => { setShowUploadDialog(false) }}
                     title={'데이터 업로드'}
-                    contentLabel={'클립보드 데이터 파일을 업로드합니다.'}
+                    contentLabel={'도형 데이터 파일을 업로드합니다.'}
                 >
                     <div className="upload-area">
                         <input
                             type="file"
                             id="file-upload"
-                            accept=".json,.txt"
-                            onChange={() => { }}
+                            accept=".json"
+                            onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = async (event) => {
+                                        try {
+                                            const fileContent = JSON.parse(event.target.result);
+                                            const validateKey = (() => {
+                                                // 키검사 
+                                                for (const content of fileContent) {
+                                                    if (!content.hasOwnProperty('displayValue')) return true;
+                                                    if (!content.hasOwnProperty('key')) return true;
+                                                    if (!content.hasOwnProperty('title')) return true;
+                                                    if (!content.hasOwnProperty('value')) return true;
+                                                    if (!content.hasOwnProperty('isWord')) return true;
+                                                }
+
+                                                return false;
+                                            })()
+
+                                            if (validateKey) {
+                                                setSnackbar({ show: true, message: '잘못된 파일입니다.' })
+                                                return;
+                                            }
+
+                                            for (const { key, value, displayValue, title, isWord: targetIsWord } of fileContent) {
+                                                await saveItem(targetIsWord, { key, value, displayValue, title, isWord: targetIsWord })
+                                            }
+
+                                            setSnackbar({ show: true, message: '저장되었습니다.' })
+                                            setShowUploadDialog(false)
+                                            setBtnList(await searchItem(isWord) || [])
+
+                                        } catch (error) {
+                                            console.error("Error parsing JSON:", error);
+                                        }
+                                    };
+                                    reader.readAsText(file);
+                                }
+                            }}
                             className="file-input"
                         />
                         <label htmlFor="file-upload" className="file-label">

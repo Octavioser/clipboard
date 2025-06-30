@@ -1,4 +1,4 @@
-import React, { useRef, useState, Fragment } from 'react';
+import { useState, Fragment } from 'react';
 import { validateParsingClipboardToText, getCurrentDateTimeNumberString, parseHtmlString, saveItem } from './Utils';
 import { CommonSnackbar } from './Components';
 
@@ -116,7 +116,7 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
                                                 setSnackbar({ show: true, message: '제목을 입력해주세요.' })
                                             }
                                             const key = getCurrentDateTimeNumberString();
-                                            await saveItem(addItem.isWord, { key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput })
+                                            await saveItem(addItem.isWord, { key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput, isWord: addItem.isWord })
                                             setIsWord(addItem.isWord);
                                             setSnackbar({ show: true, message: '저장되었습니다.' })
                                             setTimeout(() => {
@@ -126,7 +126,7 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
                                                 setDisplayItem(<></>)
                                                 setSnackbar({ show: false, message: '' })
                                                 close();
-                                            }, 1000)
+                                            }, 400)
                                         }}
                                     >
                                         저장하기
