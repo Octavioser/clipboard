@@ -160,6 +160,10 @@ const App = () => {
                                     { name: '10', value: '/images/reCircle/circle10.png' },
                                     { name: '11', value: '/images/reCircle/circle11.png' },
                                     { name: '12', value: '/images/reCircle/circle12.png' },
+                                    { name: '13', value: '/images/reCircle/circle13.png' },
+                                    { name: '14', value: '/images/reCircle/circle14.png' },
+                                    { name: '15', value: '/images/reCircle/circle15.png' },
+                                    { name: '16', value: '/images/reCircle/circle16.png' }
                                 ].map(({ value, name }) => (
                                     <button
                                         key={value}
