@@ -1,23 +1,23 @@
 import { useState, Fragment } from 'react';
-import { validateParsingClipboardToText, getCurrentDateTimeNumberString, parseHtmlString, saveItem } from './Utils';
+import { validateParsingClipboardToText, getCurrentDateTimeNumberString, parseHtmlString, saveItem, searchItem } from './Utils';
 import { CommonSnackbar } from './Components';
 
-import './AddItem.css'
+import './AddItem.css';
 
 
 
 
 const AddItem = ({ isAdd, close, setIsWord }) => {
 
-    const [currentPage, setCurrentPage] = useState(1)
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const [titleInput, setTitleInput] = useState("")
+    const [titleInput, setTitleInput] = useState("");
 
-    const [addItem, setAddItem] = useState({ value: '', displayValue: '', isWord: null })
+    const [addItem, setAddItem] = useState({ value: '', displayValue: '', isWord: null });
 
-    const [displayItem, setDisplayItem] = useState(<></>)
+    const [displayItem, setDisplayItem] = useState(<></>);
 
-    const [snackbar, setSnackbar] = useState({ show: false, message: '' })
+    const [snackbar, setSnackbar] = useState({ show: false, message: '' });
 
     return (
         <Fragment>
@@ -57,11 +57,11 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
                                 <p className="paste-instruction">복사 후 밑에 버튼을 클릭 해주세요.</p>
                                 <button className="paste-button"
                                     onClick={async () => {
-                                        const { displayValue, value, isWord } = await validateParsingClipboardToText((e) => { setSnackbar(e) })
+                                        const { displayValue, value, isWord } = await validateParsingClipboardToText((e) => { setSnackbar(e); });
                                         if (value) {
-                                            setAddItem({ displayValue, value, isWord })
-                                            setDisplayItem(parseHtmlString(displayValue))
-                                            setCurrentPage(2)
+                                            setAddItem({ displayValue, value, isWord });
+                                            setDisplayItem(parseHtmlString(displayValue));
+                                            setCurrentPage(2);
                                         }
                                     }}
                                 >
@@ -74,8 +74,8 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
 
                             <button className="back-arrow-button"
                                 onClick={() => {
-                                    setCurrentPage(1)
-                                    setTitleInput('')
+                                    setCurrentPage(1);
+                                    setTitleInput('');
                                 }} >
                                 <svg
                                     width="20"
@@ -113,20 +113,29 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
                                         className="save-button"
                                         onClick={async () => {
                                             if (!titleInput) {
-                                                setSnackbar({ show: true, message: '제목을 입력해주세요.' })
+                                                setSnackbar({ show: true, message: '제목을 입력해주세요.' });
+                                                return;
                                             }
                                             const key = getCurrentDateTimeNumberString();
-                                            await saveItem(addItem.isWord, { key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput, isWord: addItem.isWord })
+
+                                            const data = await searchItem(addItem.isWord) || [];
+
+                                            if (data.length >= 20) {
+                                                setSnackbar({ show: true, message: `최대 20개까지 저장가능합니다. (해당 도형: ${addItem.isWord ? '워드' : '슬라이드'})` });
+                                                return;
+                                            }
+
+                                            await saveItem(addItem.isWord, { key, value: addItem.value, displayValue: addItem.displayValue, title: titleInput, isWord: addItem.isWord });
                                             setIsWord(addItem.isWord);
-                                            setSnackbar({ show: true, message: '저장되었습니다.' })
+                                            setSnackbar({ show: true, message: '저장되었습니다.' });
                                             setTimeout(() => {
-                                                setCurrentPage(1)
-                                                setTitleInput("")
-                                                setAddItem({ value: '', displayValue: '', isWord: null })
-                                                setDisplayItem(<></>)
-                                                setSnackbar({ show: false, message: '' })
+                                                setCurrentPage(1);
+                                                setTitleInput("");
+                                                setAddItem({ value: '', displayValue: '', isWord: null });
+                                                setDisplayItem(<></>);
+                                                setSnackbar({ show: false, message: '' });
                                                 close();
-                                            }, 400)
+                                            }, 400);
                                         }}
                                     >
                                         저장하기
@@ -137,9 +146,9 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
                     </div>
                 </div>
             </div >
-            <CommonSnackbar snackbar={snackbar} close={() => { setSnackbar({ show: false, message: '' }) }} />
+            <CommonSnackbar snackbar={snackbar} close={() => { setSnackbar({ show: false, message: '' }); }} />
         </Fragment>
-    )
+    );
 
-}
+};
 export default AddItem;
