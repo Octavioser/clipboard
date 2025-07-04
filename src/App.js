@@ -12,7 +12,7 @@ import './App.css';
 
 const App = () => {
 
-    const [isWord, setIsWord] = useState(false);
+    const [isWord, setIsWord] = useState(true);
 
     const [copyFlag, setCopyFlag] = useState('');
 
@@ -73,7 +73,12 @@ const App = () => {
     return (
         <div className="container" ref={containerRef}>
             <div className="title-container">
-                <h1 className={`main-title ${isWord ? "blue-theme" : ""}`}>Clipboard Extension</h1>
+                <h1 className={`main-title ${isWord ? "blue-theme" : ""}`}>
+                    <span style={{ fontWeight: 800, fontSize: '35px' }}>O</span>
+                    N
+                    <span style={{ fontSize: '44px' }}>☰</span>
+                    &nbsp;Clipboard
+                </h1>
                 <span className="subtitle">{`${isWord ? "워드" : "슬라이드"}`}</span>
             </div>
             <div className="guide-header">

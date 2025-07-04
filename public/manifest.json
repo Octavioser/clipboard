@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Clipboard Extension",
+    "name": "OneClip",
     "version": "1.0",
-    "description": "Clipboard Extension",
+    "description": "OneClip Extension",
     "icons": {
         "16": "images/icon-16.png",
         "48": "images/icon-48.png",
