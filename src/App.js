@@ -92,6 +92,15 @@ const App = () => {
                             <button
                                 className="dropdown-item"
                                 onClick={() => {
+                                    triggerRefresh();
+                                    setShowDropdown(false);
+                                }}
+                            >
+                                {`${isWord ? "슬라이드 모드" : "워드 모드"}`}
+                            </button>
+                            <button
+                                className="dropdown-item"
+                                onClick={() => {
                                     setShowDownloadDialog(true);
                                     setShowDropdown(false);
                                 }}
@@ -115,15 +124,6 @@ const App = () => {
                                 }}
                             >
                                 {deleteMode ? "제거 완료" : "제거"}
-                            </button>
-                            <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                    triggerRefresh();
-                                    setShowDropdown(false);
-                                }}
-                            >
-                                {`${isWord ? "슬라이드 모드" : "워드 모드"}`}
                             </button>
                         </div>
                     )}
