@@ -229,10 +229,7 @@
     /* 부모 영역을 벗어나지 않도록 최대 크기만 맞춤 */
     max-width: 100%;
     max-height: 100%;
-    /* SVG의 viewBox에 정의된 비율대로 “meet” 동작 보장 */
-    /* (default 가 xMidYMid meet 이지만, 명시해도 무방합니다) */
-    contain: content;
-    /* optional, Edge/Firefox */
+    overflow: visible;
 }
 
 .input-title {
