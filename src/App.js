@@ -53,7 +53,7 @@ const App = () => {
             const data = await searchItem(isWord) || [];
             console.log(data);
             setBtnList(data);
-            // setBtnList(buttons)
+            // setBtnList(buttons);
         })();
 
     }, [isWord, isAdd, setBtnList]);

@@ -11,7 +11,7 @@ export const parsingClipboard = async () => {
         for (const item of clipboardContents) {
             for (const itemType of item.types) {
                 if (itemType === "image/png") {
-                    console.log('image/png')
+                    console.log('image/png');
                     const pngImage = new Image(); // Image constructor
                     pngImage.src = "image1.png";
                     pngImage.alt = "PNG image from clipboard";
@@ -19,13 +19,13 @@ export const parsingClipboard = async () => {
                     pngImage.src = URL.createObjectURL(blob);
                     console.log(pngImage);
                 } else if (itemType === "text/html") {
-                    console.log('text/html')
+                    console.log('text/html');
                     const blob = await item.getType("text/html");
                     const blobText = await blob.text();
                     await navigator.clipboard.writeText(blobText);
                     console.log(blobText);
                 } else if (itemType === "text/plain") {
-                    console.log('text/plain')
+                    console.log('text/plain');
                     const blob = await item.getType("text/plain");
                     const blobText = await blob.text();
                     console.log(blobText);
@@ -48,7 +48,7 @@ export const parsingDataSetClipboard = async (blobText) => {
     const blob = new Blob([blobText], { type });
     const data = [new ClipboardItem({ [type]: blob })];
     await navigator.clipboard.write(data);
-}
+};
 
 // 이미지 클립보드에 저장
 export const parsingImgSetClipboard = async (img) => {
@@ -56,54 +56,54 @@ export const parsingImgSetClipboard = async (img) => {
     const blob = await response.blob(); // blob으로 변환
     const data = [new ClipboardItem({ [blob.type]: blob })];
     await navigator.clipboard.write(data);
-}
+};
 
 // 검증후 통과되면 클립보드 저장 후 리턴
 export const validateParsingClipboardToText = async (showSnackbar) => {
     // 있어야할 class
     const isRequiredInvalid = el => {
         if (!el || el.length === 0) {
-            showSnackbar({ show: true, message: '상단 삽입탭 - 도형 만 가능합니다.' })
+            showSnackbar({ show: true, message: '상단 삽입탭 - 도형 만 가능합니다.' });
             return true;
         }
         if (el.length > 1) {
-            showSnackbar({ show: true, message: '하나의 도형 만 가능합니다.' })
+            showSnackbar({ show: true, message: '하나의 도형 만 가능합니다.' });
             return true;
         }
         return false;
 
-    }
+    };
 
     // 있으면 안돼는 class
     const isNotAllowedPresent = el => {
         if (el && el.length > 0) {
-            showSnackbar({ show: true, message: '상단 삽입탭 - 도형 만 가능합니다.' })
+            showSnackbar({ show: true, message: '상단 삽입탭 - 도형 만 가능합니다.' });
             return true;
         }
         return false;
-    }
+    };
 
     try {
         const clipboardContents = await navigator.clipboard.read();
 
         // 클립보드에 값이 없으시 
         if (!clipboardContents) {
-            showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' })
+            showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' });
             return false;
         }
         // 클립보드에 값이 여러개 있으시 (혹시 몰라서)
         if (clipboardContents.length > 1) {
-            showSnackbar({ show: true, message: '클립보드가 여러개 입니다. 하나만 복사해주세요.' })
+            showSnackbar({ show: true, message: '클립보드가 여러개 입니다. 하나만 복사해주세요.' });
             return false;
         }
 
 
         for (const item of clipboardContents) {
 
-            const data = item.types.filter(type => type === "text/html")
+            const data = item.types.filter(type => type === "text/html");
 
             if (data.length !== 1) {
-                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' })
+                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' });
                 return false;
             }
 
@@ -127,10 +127,10 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
             if (["script", "iframe", "object", "embed", "form", "video", "audio", "img", "table", "colgroup", "tbody"]
                 .some(tag => {
                     const tagel = doc.getElementsByTagName(tag);
-                    return tagel && tagel.length > 0
+                    return tagel && tagel.length > 0;
                 })
             ) {
-                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' })
+                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' });
                 return false;
             }
 
@@ -172,26 +172,35 @@ export const validateParsingClipboardToText = async (showSnackbar) => {
                 }
             }
             else {
-                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' })
+                showSnackbar({ show: true, message: '삽입탭 - 도형을 복사해 주세요.' });
                 return false;
             }
 
+
+
             const svg = doc.querySelector("svg");
+
+            // 화살표 방향 틀어짐 수정 
+            const parentsSvg = svg.parentElement;
+            const parentStyleTransform = parentsSvg?.style?.transform || getComputedStyle(parentsSvg)?.transform;
+            if (parentStyleTransform && parentStyleTransform !== 'none') {
+                svg.style.transform = parentStyleTransform;
+            }
 
             svg.removeAttribute("width");
             svg.removeAttribute("height");
 
-            return { displayValue: svg.outerHTML, value: htmlStringRemoveMeta, isWord }
+            return { displayValue: svg.outerHTML, value: htmlStringRemoveMeta, isWord };
         }
     } catch (error) {
-        console.log(error.message)
-        return { displayValue: '', value: null }
+        console.log(error.message);
+        return { displayValue: '', value: null };
     }
 };
 
 // 스트링 html 파서 
 export const parseHtmlString = (elStr) => {
-    if (!elStr) return null
+    if (!elStr) return null;
     try {
         const elements = [];
 
@@ -238,17 +247,17 @@ export const parseHtmlString = (elStr) => {
                     if (data.style) {
                         const entries = Object.entries(parseStyleString(data.style));
                         const filterEntries = entries.map(([key, value]) => {
-                            if (key === 'position') return [key, 'static']
+                            if (key === 'position') return [key, 'static'];
                             // if (key === 'width') return [key, '150px']
                             // if (key === 'height') return [key, '150px']
-                            return [key, value]
+                            return [key, value];
                         });
                         data.style = Object.fromEntries(filterEntries);
                     }
                     // svg 가운데 중앙정렬 속성 넣어주기 
-                    if (tagNm === 'svg') data.preserveAspectRatio = "xMidYMid meet"
-                    return data
-                })()
+                    if (tagNm === 'svg') data.preserveAspectRatio = "xMidYMid meet";
+                    return data;
+                })();
 
                 const entries = Object.entries(attr);
                 const filterEntries = entries.filter(([key, value]) => tagNm === 'marker' || !(['id', 'class'].includes(key)));
@@ -256,15 +265,15 @@ export const parseHtmlString = (elStr) => {
             })() || {};
 
             // 부모 sq 
-            const parents = depth > 0 ? elements[depth - 1][0] : null
+            const parents = depth > 0 ? elements[depth - 1][0] : null;
 
             // 해당 리스트가 존재하면 위치:#1
             if (elements[depth] instanceof Array) {
-                elements[depth][sq] = { tagNm, parents, attrs }
+                elements[depth][sq] = { tagNm, parents, attrs };
             }
             else {
                 // index 0은 계산 시점에 가르키는 sq
-                elements[depth] = [1, { tagNm, parents, attrs }]
+                elements[depth] = [1, { tagNm, parents, attrs }];
             }
 
             if (tagNm === 'br' || str.endsWith('/>')) {
@@ -278,9 +287,9 @@ export const parseHtmlString = (elStr) => {
         // createElement 해주기 
 
         // 인덱스별로 child정보를 저장용
-        let childList = []
+        let childList = [];
         for (let i = elements.length - 1; i >= 0; i--) {
-            let targetList = elements[i]
+            let targetList = elements[i];
             childList[i] = [];
             for (let j = 0; j < targetList.length; j++) {
 
@@ -291,38 +300,38 @@ export const parseHtmlString = (elStr) => {
                     const targetChild = (() => {
                         if (i === elements.length - 1) return null;
                         // 여기서 j는 child에서 parents에 넣어놓은 인덱스 
-                        return childList[i + 1][j]
-                    })()
+                        return childList[i + 1][j];
+                    })();
 
                     if (childList[i][target.parents] instanceof Array) {
-                        childList[i][target.parents].push(React.createElement(target.tagNm, { ...target.attrs }, targetChild))
+                        childList[i][target.parents].push(React.createElement(target.tagNm, { ...target.attrs }, targetChild));
                     }
                     else {
-                        childList[i][target.parents] = [React.createElement(target.tagNm, { ...target.attrs }, targetChild)]
+                        childList[i][target.parents] = [React.createElement(target.tagNm, { ...target.attrs }, targetChild)];
                     }
                 }
             }
         }
-        return React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1])
+        return React.createElement(elements[0][1].tagNm, { ...elements[0][1].attrs }, childList[1][1]);
     } catch (error) {
-        console.log(error)
-        return null
+        console.log(error);
+        return null;
     }
 
 
-}
+};
 
 // 태그 속성파서 
 const parseAttributes = (attrString) => {
-    const result = {}
+    const result = {};
     const attrRegex = /([^\s=]+)\s*=\s*"([^"]*)"/g;
     let m2;
     while ((m2 = attrRegex.exec(attrString))) {
         const [, name, value] = m2;
         result[name] = value;
     }
-    return result
-}
+    return result;
+};
 
 // 태그의 속성에 style 파서
 const parseStyleString = styleString => {
@@ -344,7 +353,7 @@ const parseStyleString = styleString => {
 
             return obj;
         }, {});
-}
+};
 
 
 // 도형의 키를 시간으로 저장 
@@ -358,14 +367,14 @@ export const getCurrentDateTimeNumberString = () => {
     const mm = String(d.getMinutes()).padStart(2, '0');
     const ss = String(d.getSeconds()).padStart(2, '0');
     return `${yyyy}${MM}${dd}${hh}${mm}${ss}`;
-}
+};
 
 
 export const searchItem = async (isWord) => {
     const itemKey = isWord ? 'word' : 'slide';
     const data = await chrome.storage.local.get([itemKey]);
     return data[itemKey] || [];
-}
+};
 
 export const saveItem = async (isWord, newItem) => {
     const itemKey = isWord ? 'word' : 'slide';
@@ -376,7 +385,7 @@ export const saveItem = async (isWord, newItem) => {
 
     const newData = [...(data[itemKey] || []), newItem];
     await chrome.storage.local.set({ [itemKey]: newData });
-}
+};
 
 export const deleteItem = async (isWord, key) => {
     const itemKey = isWord ? 'word' : 'slide';
