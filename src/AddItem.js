@@ -120,8 +120,8 @@ const AddItem = ({ isAdd, close, setIsWord }) => {
 
                                             const data = await searchItem(addItem.isWord) || [];
 
-                                            if (data.length >= 20) {
-                                                setSnackbar({ show: true, message: `최대 20개까지 저장가능합니다. (해당 도형: ${addItem.isWord ? '워드' : '슬라이드'})` });
+                                            if (data.length >= 30) {
+                                                setSnackbar({ show: true, message: `최대 30개까지 저장가능합니다. (해당 도형: ${addItem.isWord ? '워드' : '슬라이드'})` });
                                                 return;
                                             }
 

@@ -156,7 +156,7 @@
 }
 
 .paste-button {
-    background-color: #e79141;
+    background-color: #ba74c3;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -168,7 +168,7 @@
 }
 
 .paste-button:hover:not(:disabled) {
-    background-color: #e79141;
+    background-color: #ba74c3;
     transform: translateY(-1px);
 }
 

@@ -324,13 +324,13 @@ const App = () => {
                                             const originSlideData = await searchItem(false) || [];
                                             const originWordData = await searchItem(true) || [];
 
-                                            if (newSlideData.length + originSlideData.length > 20) {
-                                                setSnackbar({ show: true, message: `최대 20개까지 저장가능합니다. (해당 도형: 슬라이드)` });
+                                            if (newSlideData.length + originSlideData.length > 30) {
+                                                setSnackbar({ show: true, message: `최대 30개까지 저장가능합니다. (해당 도형: 슬라이드)` });
                                                 return;
                                             }
 
-                                            if (newWordData.length + originWordData.length > 20) {
-                                                setSnackbar({ show: true, message: `최대 20개까지 저장가능합니다. (해당 도형: 워드)` });
+                                            if (newWordData.length + originWordData.length > 30) {
+                                                setSnackbar({ show: true, message: `최대 30개까지 저장가능합니다. (해당 도형: 워드)` });
                                                 return;
                                             }
 
